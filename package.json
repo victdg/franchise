@@ -1,0 +1,21 @@
+{
+  "name": "mi-lambda-typescript",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "clean-to-package": "rimraf dist && rimraf ./infra/lambda_function.zip",
+    "package-and-deploy": "npm run clean-to-package && npm run build && cp package.json dist/ && (cp package-lock.json dist/ 2>/dev/null || true) && cd dist && npm install --omit=dev && 7z a ../infra/lambda_function.zip . && cd .. && cd infra && terraform apply --auto-approve"
+  },
+  "dependencies": {
+    "aws-lambda": "^1.0.7",
+    "mysql2": "^3.6.0",
+    "sequelize": "^6.32.1"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.119",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.0.4",
+    "@types/sequelize": "^4.28.15"
+  }
+}
