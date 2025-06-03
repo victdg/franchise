@@ -1,7 +1,6 @@
 import { Constants } from "../../../domain/constants/Constants";
 import { TechnicalErrorException } from "../../../domain/exceptions/TechnicalException";
 import { Product } from "../../../domain/model/Product";
-import { UseCaseResponse } from "../../../domain/model/UseCaseResponse";
 import { ProductPersistencePort } from "../../../domain/spi/ProductPersistencePort";
 import { ProductAdapterMapper } from "./ProductAdapterMapper";
 import { ProductCreationAttributes, ProductModel } from "./ProductModel";
@@ -22,6 +21,8 @@ export class ProductPersistenceAdapter implements ProductPersistencePort {
         stock: product.getStock()!,
       };
 
+      await ProductModel.sync();
+
       const createdProduct = await ProductModel.create(productData);
 
       console.log("Created Product:", createdProduct);
@@ -35,13 +36,42 @@ export class ProductPersistenceAdapter implements ProductPersistencePort {
       throw error;
     }
   }
-  findById(id: string): Promise<Product | null> {
-    throw new Error("Method not implemented.");
+
+  async findById(id: string): Promise<Product | null> {
+    try {
+      const productModelFound = await ProductModel.findByPk(id);
+      const result =
+        productModelFound !== null
+          ? this.productAdapterMapper.toDomain(productModelFound)
+          : null;
+      return result;
+    } catch (error) {
+      console.log("Error infra::>> ", error);
+      if (error instanceof Error) {
+        throw new TechnicalErrorException(error.message);
+      }
+      throw new TechnicalErrorException(Constants.TECHNICAL_ERROR_MESSAGE);
+    }
   }
-  update(product: Product): Promise<void> {
-    throw new Error("Method not implemented.");
+
+  async update(product: Product): Promise<void> {
+    try {
+      const dataToUpdate: Partial<ProductModel> = {
+        stock: product.getStock(),
+      };
+      await ProductModel.update(dataToUpdate, {
+        where: { id: product.getId() },
+      });
+    } catch (error) {
+      console.log("Error infra::>> ", error);
+      if (error instanceof Error) {
+        throw new TechnicalErrorException(error.message);
+      }
+      throw new TechnicalErrorException(Constants.TECHNICAL_ERROR_MESSAGE);
+    }
   }
-  delete(productId: string): Promise<void> {
-    throw new Error("Method not implemented.");
+
+  async delete(productId: string): Promise<void> {
+    await ProductModel.destroy({ where: { id: productId } });
   }
 }

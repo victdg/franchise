@@ -204,6 +204,78 @@ resource "aws_lambda_function" "branchCreate_lambda" {
   
 }
 
+resource "aws_lambda_function" "productCreate_lambda" {
+  filename      = "lambda_function.zip"
+  function_name = "productCreate"
+  role          = aws_iam_role.lambda_exec.arn
+  handler       = "application/handler.productCreateApiGateway"
+  runtime       = "nodejs18.x"
+  source_code_hash = data.archive_file.lambda_zip.output_base64sha256
+
+  environment {
+    variables = {
+      NODE_ENV = "production"
+      DB_HOST     = aws_db_instance.main.address
+      DB_USER     = var.db_username
+      DB_PASSWORD = var.db_password
+      DB_NAME     = var.db_name
+    }
+  }
+
+    vpc_config {
+    subnet_ids         = aws_subnet.private[*].id
+    security_group_ids = [aws_security_group.lambda.id]
+  }
+}
+
+resource "aws_lambda_function" "productUpdate_lambda" {
+  filename      = "lambda_function.zip"
+  function_name = "productUpdate"
+  role          = aws_iam_role.lambda_exec.arn
+  handler       = "application/handler.productUpdateApiGateway"
+  runtime       = "nodejs18.x"
+  source_code_hash = data.archive_file.lambda_zip.output_base64sha256
+
+  environment {
+    variables = {
+      NODE_ENV = "production"
+      DB_HOST     = aws_db_instance.main.address
+      DB_USER     = var.db_username
+      DB_PASSWORD = var.db_password
+      DB_NAME     = var.db_name
+    }
+  }
+
+    vpc_config {
+    subnet_ids         = aws_subnet.private[*].id
+    security_group_ids = [aws_security_group.lambda.id]
+  }
+}
+
+resource "aws_lambda_function" "productDelete_lambda" {
+  filename      = "lambda_function.zip"
+  function_name = "productDelete"
+  role          = aws_iam_role.lambda_exec.arn
+  handler       = "application/handler.productDeleteApiGateway"
+  runtime       = "nodejs18.x"
+  source_code_hash = data.archive_file.lambda_zip.output_base64sha256
+
+  environment {
+    variables = {
+      NODE_ENV = "production"
+      DB_HOST     = aws_db_instance.main.address
+      DB_USER     = var.db_username
+      DB_PASSWORD = var.db_password
+      DB_NAME     = var.db_name
+    }
+  }
+
+    vpc_config {
+    subnet_ids         = aws_subnet.private[*].id
+    security_group_ids = [aws_security_group.lambda.id]
+  }
+}
+
 resource "aws_iam_role" "lambda_exec" {
   name = "lambda_exec_role"
 
@@ -256,6 +328,18 @@ resource "aws_api_gateway_resource" "branchResource" {
   path_part   = "branch"
 }
 
+resource "aws_api_gateway_resource" "productResource" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
+  path_part   = "product"
+}
+
+resource "aws_api_gateway_resource" "productPathParamResource" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  parent_id   = aws_api_gateway_resource.productResource.id
+  path_part   = "{productId}"
+}
+
 resource "aws_api_gateway_method" "method" {
   rest_api_id   = aws_api_gateway_rest_api.api.id
   resource_id   = aws_api_gateway_resource.resource.id
@@ -274,6 +358,27 @@ resource "aws_api_gateway_method" "branch_method" {
   rest_api_id   = aws_api_gateway_rest_api.api.id
   resource_id   = aws_api_gateway_resource.branchResource.id
   http_method   = "POST"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_method" "product_method_create" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.productResource.id
+  http_method   = "POST"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_method" "product_method_update" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.productPathParamResource.id
+  http_method   = "PATCH"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_method" "product_method_delete" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.productPathParamResource.id
+  http_method   = "DELETE"
   authorization = "NONE"
 }
 
@@ -304,6 +409,33 @@ resource "aws_api_gateway_integration" "branch_integration" {
   uri                     = aws_lambda_function.branchCreate_lambda.invoke_arn
 }
 
+resource "aws_api_gateway_integration" "product_create_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  resource_id             = aws_api_gateway_resource.productResource.id
+  http_method             = aws_api_gateway_method.product_method_create.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.productCreate_lambda.invoke_arn
+}
+
+resource "aws_api_gateway_integration" "product_update_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  resource_id             = aws_api_gateway_resource.productPathParamResource.id
+  http_method             = aws_api_gateway_method.product_method_update.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.productUpdate_lambda.invoke_arn
+}
+
+resource "aws_api_gateway_integration" "product_delete_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  resource_id             = aws_api_gateway_resource.productPathParamResource.id
+  http_method             = aws_api_gateway_method.product_method_delete.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.productDelete_lambda.invoke_arn
+}
+
 resource "aws_lambda_permission" "apigw_lambda" {
   statement_id  = "AllowExecutionFromAPIGateway"
   action        = "lambda:InvokeFunction"
@@ -328,6 +460,30 @@ resource "aws_lambda_permission" "branch_apigw_lambda" {
   source_arn    = "${aws_api_gateway_rest_api.api.execution_arn}/*/*/*"
 }
 
+resource "aws_lambda_permission" "productCreate_apigw_lambda" {
+  statement_id  = "AllowExecutionFromAPIGateway"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.productCreate_lambda.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_api_gateway_rest_api.api.execution_arn}/*/*/*"
+}
+
+resource "aws_lambda_permission" "productUpdate_apigw_lambda" {
+  statement_id  = "AllowExecutionFromAPIGateway"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.productUpdate_lambda.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_api_gateway_rest_api.api.execution_arn}/*/*/*"
+}
+
+resource "aws_lambda_permission" "productDelete_apigw_lambda" {
+  statement_id  = "AllowExecutionFromAPIGateway"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.productDelete_lambda.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_api_gateway_rest_api.api.execution_arn}/*/*/*"
+}
+
 resource "aws_api_gateway_deployment" "deployment" {
   depends_on = [aws_api_gateway_integration.integration]
 
@@ -337,7 +493,10 @@ resource "aws_api_gateway_deployment" "deployment" {
 
 resource "aws_api_gateway_deployment" "franchise_project_deployment" {
   depends_on = [aws_api_gateway_integration.franchise_integration, 
-  aws_api_gateway_integration.branch_integration]
+  aws_api_gateway_integration.branch_integration,
+  aws_api_gateway_integration.product_create_integration,
+  aws_api_gateway_integration.product_update_integration,
+  aws_api_gateway_integration.product_delete_integration]
 
   rest_api_id = aws_api_gateway_rest_api.api.id
   stage_name  = "prod"

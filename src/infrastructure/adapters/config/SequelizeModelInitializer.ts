@@ -1,5 +1,6 @@
 import { FranchiseModel } from "../franchise/FranchiseModel";
 import { BranchModel } from "../branch/BranchModel";
+import { ProductModel } from "../product/ProductModel";
 
 export class SequelizeModelInitializer {
   static defineAssociations() {
@@ -16,6 +17,20 @@ export class SequelizeModelInitializer {
       sourceKey: "id", // La columna en FranchiseModel que se usa para la relación
       as: "branches", // Alias para acceder a las sucursales desde una franquicia (franchise.branches)
     });
+
+    ProductModel.belongsTo(BranchModel, {
+      foreignKey: "branchId",
+      targetKey: "id",
+      as: "branch",
+    });
+
+    BranchModel.hasMany(ProductModel, {
+      foreignKey: "branchId",
+      sourceKey: "id",
+      as: "products",
+    });
+
+    // La columna en ProductModel que almacena la FK
     console.log("Associations defined");
     this.printAssociations();
   }

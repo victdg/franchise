@@ -1,11 +1,14 @@
 import { DataTypes, ForeignKey, Model, Optional } from "sequelize";
 import sequelize from "../config/sequelize";
 import { FranchiseModel } from "../franchise/FranchiseModel";
+import { ProductModel } from "../product/ProductModel";
 
 export interface BranchAttributes {
   id: string;
   franchiseId: string;
   name: string;
+
+  readonly products?: ProductModel[];
 }
 
 interface BranchCreationAttributes extends Optional<BranchAttributes, "id"> {}
@@ -17,6 +20,8 @@ class BranchModel
   public id!: string;
   public franchiseId!: ForeignKey<FranchiseModel["id"]>;
   public name!: string;
+
+  public readonly products?: ProductModel[];
 
   // Timestamps (Sequelize los añade si timestamps: true en la definición del modelo)
   public readonly createdAt!: Date;
