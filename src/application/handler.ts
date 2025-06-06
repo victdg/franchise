@@ -49,10 +49,8 @@ const productUseCase = new ProductUseCase(
   branchPersistenceAdapter
 );
 
-export const { franchiseCreateApiGateway } = FranchiseApiGatewayMaker(
-  franchiseUseCase,
-  franchiseMapperRequest
-);
+export const { franchiseCreateApiGateway, getTopStockByBranchApiGateway } =
+  FranchiseApiGatewayMaker(franchiseUseCase, franchiseMapperRequest);
 
 export const { branchCreateApiGateway } = BranchApiGatewayMaker(
   branchUseCase,

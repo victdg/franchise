@@ -8,4 +8,8 @@ export class FranchiseMapperRequest {
     franchise.setName(body.name);
     return franchise;
   }
+
+  public toGetTopStockDomain(request: APIGatewayProxyEvent): string {
+    return request.pathParameters?.franchiseId!;
+  }
 }

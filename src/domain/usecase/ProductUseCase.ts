@@ -1,9 +1,12 @@
 import { ProductServicePort } from "../api/ProductServicePort";
 import { Constants } from "../constants/Constants";
+import { BadRequestException } from "../exceptions/BadRequestException";
+import { NotFoundException } from "../exceptions/NotFoundException";
 import { Product } from "../model/Product";
 import { UseCaseResponse } from "../model/UseCaseResponse";
 import { BranchPersistencePort } from "../spi/BranchPersistencePort";
 import { ProductPersistencePort } from "../spi/ProductPersistencePort";
+import { DomainErrorMapper } from "../utils/DomainErrorMapper";
 
 export class ProductUseCase implements ProductServicePort {
   private readonly productPersistencePort: ProductPersistencePort;
@@ -19,18 +22,14 @@ export class ProductUseCase implements ProductServicePort {
 
   async create(product: Product): Promise<UseCaseResponse> {
     try {
+      this.bodyCreateValidation(product);
       const branchAssociated = await this.branchPersistencePort.findById(
         product.getBranchId()!
       );
 
       console.log("branchAssociated::>> ", branchAssociated);
 
-      if (branchAssociated === null) {
-        return new UseCaseResponse(
-          Constants.NOT_FOUND_STATUS_CODE,
-          Constants.NOT_FOUND_MESSAGE
-        );
-      }
+      if (branchAssociated === null) throw new NotFoundException();
 
       const createResult = await this.productPersistencePort.create(product);
 
@@ -41,25 +40,19 @@ export class ProductUseCase implements ProductServicePort {
       );
     } catch (error) {
       console.log("error::>> ", error);
-      return new UseCaseResponse(
-        Constants.INTERNAL_SERVER_ERROR_STATUS_CODE,
-        Constants.INTERNAL_SERVER_ERROR_MESSAGE
-      );
+      return DomainErrorMapper.toUseCaseResponse(error);
     }
   }
 
   async update(product: Product): Promise<UseCaseResponse> {
     try {
+      this.bodyUpdateValidation(product);
+
       const productToUpdate = await this.productPersistencePort.findById(
         product.getId()!
       );
       console.log("productToUpdate::>> ", productToUpdate);
-      if (productToUpdate === null) {
-        return new UseCaseResponse(
-          Constants.NOT_FOUND_STATUS_CODE,
-          Constants.NOT_FOUND_MESSAGE
-        );
-      }
+      if (productToUpdate === null) throw new NotFoundException();
 
       await this.productPersistencePort.update(product);
       return new UseCaseResponse(
@@ -68,10 +61,7 @@ export class ProductUseCase implements ProductServicePort {
       );
     } catch (error) {
       console.log("error::>> ", error);
-      return new UseCaseResponse(
-        Constants.INTERNAL_SERVER_ERROR_STATUS_CODE,
-        Constants.INTERNAL_SERVER_ERROR_MESSAGE
-      );
+      return DomainErrorMapper.toUseCaseResponse(error);
     }
   }
 
@@ -81,12 +71,7 @@ export class ProductUseCase implements ProductServicePort {
         productId
       );
       console.log("productToUpdate::>> ", productToUpdate);
-      if (productToUpdate === null) {
-        return new UseCaseResponse(
-          Constants.NOT_FOUND_STATUS_CODE,
-          Constants.NOT_FOUND_MESSAGE
-        );
-      }
+      if (productToUpdate === null) throw new NotFoundException();
 
       await this.productPersistencePort.delete(productId);
       return new UseCaseResponse(
@@ -95,10 +80,33 @@ export class ProductUseCase implements ProductServicePort {
       );
     } catch (error) {
       console.log("error::>> ", error);
-      return new UseCaseResponse(
-        Constants.INTERNAL_SERVER_ERROR_STATUS_CODE,
-        Constants.INTERNAL_SERVER_ERROR_MESSAGE
-      );
+      return DomainErrorMapper.toUseCaseResponse(error);
+    }
+  }
+
+  private bodyCreateValidation(product: Product): void {
+    if (
+      product.getName() === null ||
+      product.getName() === undefined ||
+      product.getName() === "" ||
+      product.getBranchId() === null ||
+      product.getBranchId() === undefined ||
+      product.getBranchId() === "" ||
+      product.getStock() === null ||
+      product.getStock() === undefined ||
+      product.getStock()! < 0
+    ) {
+      throw new BadRequestException();
+    }
+  }
+
+  private bodyUpdateValidation(product: Product): void {
+    if (
+      product.getStock() === null ||
+      product.getStock() === undefined ||
+      product.getStock()! < 0
+    ) {
+      throw new BadRequestException();
     }
   }
 }

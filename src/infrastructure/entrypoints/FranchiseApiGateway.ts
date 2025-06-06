@@ -16,5 +16,15 @@ export const FranchiseApiGatewayMaker = (
         franchiseMapperRequest.toDomain(event)
       );
     },
+
+    getTopStockByBranchApiGateway: async (
+      event: APIGatewayProxyEvent
+    ): Promise<APIGatewayProxyResult> => {
+      console.log("ApiGW Franchise called gettopStock");
+      console.log(event);
+      return await franchiseUseCase.getTopStockByBranch(
+        franchiseMapperRequest.toGetTopStockDomain(event)
+      );
+    },
   };
 };

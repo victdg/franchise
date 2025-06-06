@@ -1,9 +1,12 @@
 import { BranchServicePort } from "../api/BranchServicePort";
 import { Constants } from "../constants/Constants";
+import { BadRequestException } from "../exceptions/BadRequestException";
+import { NotFoundException } from "../exceptions/NotFoundException";
 import { Branch } from "../model/Branch";
 import { UseCaseResponse } from "../model/UseCaseResponse";
 import { BranchPersistencePort } from "../spi/BranchPersistencePort";
 import { FranchisePersistencePort } from "../spi/FranchisePersitencePort";
+import { DomainErrorMapper } from "../utils/DomainErrorMapper";
 
 export class BranchUseCase implements BranchServicePort {
   private readonly branchPersistencePort: BranchPersistencePort;
@@ -19,17 +22,14 @@ export class BranchUseCase implements BranchServicePort {
 
   async create(branch: Branch): Promise<UseCaseResponse> {
     try {
+      console.log("branch::>> ", branch);
+      this.bodyCreateValidation(branch);
       const franchiseAssociated = await this.franchisePersistencePort.findById(
         branch.getFranchiseId()
       );
       console.log("franchiseAssociated::>> ", franchiseAssociated);
 
-      if (franchiseAssociated === null) {
-        return new UseCaseResponse(
-          Constants.NOT_FOUND_STATUS_CODE,
-          Constants.NOT_FOUND_MESSAGE
-        );
-      }
+      if (franchiseAssociated === null) throw new NotFoundException();
 
       const createResult = await this.branchPersistencePort.create(branch);
       return new UseCaseResponse(
@@ -39,10 +39,20 @@ export class BranchUseCase implements BranchServicePort {
       );
     } catch (error) {
       console.log("error::>> ", error);
-      return new UseCaseResponse(
-        Constants.INTERNAL_SERVER_ERROR_STATUS_CODE,
-        Constants.INTERNAL_SERVER_ERROR_MESSAGE
-      );
+      return DomainErrorMapper.toUseCaseResponse(error);
+    }
+  }
+
+  private bodyCreateValidation(branch: Branch): void {
+    if (
+      branch.getName() === null ||
+      branch.getName() === undefined ||
+      branch.getName() === "" ||
+      branch.getFranchiseId() === null ||
+      branch.getFranchiseId() === undefined ||
+      branch.getFranchiseId() === ""
+    ) {
+      throw new BadRequestException();
     }
   }
 }

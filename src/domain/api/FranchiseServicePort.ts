@@ -3,4 +3,5 @@ import { UseCaseResponse } from "../model/UseCaseResponse";
 
 export interface FranchiseServicePort {
   create(franchise: Franchise): Promise<UseCaseResponse>;
+  getTopStockByBranch(franchiseId: string): Promise<UseCaseResponse>;
 }

@@ -1,0 +1,334 @@
+openapi: 3.0.0
+info:
+  title: API de Gestión de Franquicias y Sucursales
+  version: 1.0.0
+  description: API para gestionar franquicias, sucursales y productos
+
+paths:
+  /branch:
+    post:
+      tags:
+        - Sucursales
+      summary: Crear una nueva sucursal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "zarate 99"
+                franchiseId:
+                  type: string
+                  format: uuid
+                  example: "bb5463ba-cea6-4da4-9e39-b11d1188334b"
+      responses:
+        '200':
+          description: Sucursal creada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                        example: "14be1853-b3d4-4d80-858f-facd39169bd2"
+                  message:
+                    type: string
+                    example: "OK"
+        '503':
+          description: Servicio no disponible
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Service Unavailable"
+
+  /franchise:
+    post:
+      tags:
+        - Franquicias
+      summary: Crear una nueva franquicia
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "Franchise 99"
+      responses:
+        '200':
+          description: Franquicia creada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                        example: "b67df589-7e0a-45bc-91dd-31b8a1a1bc46"
+                  message:
+                    type: string
+                    example: "OK"
+        '503':
+          description: Servicio no disponible
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Service Unavailable"
+
+  /product:
+    post:
+      tags:
+        - Productos
+      summary: Crear un nuevo producto
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                branchId:
+                  type: string
+                  format: uuid
+                  example: "078b41f4-6abc-4a46-ad88-639c82ddf22d"
+                name:
+                  type: string
+                  example: "Tomatodos"
+                stock:
+                  type: integer
+                  example: 1
+      responses:
+        '200':
+          description: Producto creado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                        example: "bshals-hsb3-xxx"
+                  message:
+                    type: string
+                    example: "OK"
+        '503':
+          description: Servicio no disponible
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Service Unavailable"
+
+  /product/{productId}:
+    delete:
+      tags:
+        - Productos
+      summary: Eliminar un producto
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: "f0e641a7-5a82-400e-a24f-66dbf0c5fd9d"
+      responses:
+        '200':
+          description: Producto eliminado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "OK"
+        '404':
+          description: Producto no encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Not found"
+        '503':
+          description: Servicio no disponible
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Service Unavailable"
+
+    patch:
+      tags:
+        - Productos
+      summary: Actualizar el stock de un producto
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: "1f1152d2-200e-472f-93be-91a3243b9502"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                stock:
+                  type: integer
+                  example: 123
+      responses:
+        '200':
+          description: Stock actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "OK"
+        '404':
+          description: Producto no encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Not found"
+        '503':
+          description: Servicio no disponible
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Service Unavailable"
+
+  /top-stock-by-branch/{franchiseId}:
+    get:
+      tags:
+        - Reportes
+      summary: Obtener el stock superior por sucursal
+      parameters:
+        - name: franchiseId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: "bb5463ba-cea6-4da4-9e39-b11d1188334b"
+      responses:
+        '200':
+          description: Lista de sucursales con sus productos de mayor stock
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                          example: "078b41f4-6abc-4a46-ad88-639c82ddf22d"
+                        name:
+                          type: string
+                          example: "zarate-1"
+                        productId:
+                          type: string
+                          format: uuid
+                          example: "1f1152d2-200e-472f-93be-91a3243b9502"
+                        productName:
+                          type: string
+                          example: "Tomatodos"
+                        productStock:
+                          type: integer
+                          example: 123
+                  message:
+                    type: string
+                    example: "OK"
+        '404':
+          description: Franquicia no encontrada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Not found"
+        '503':
+          description: Servicio no disponible
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Service Unavailable"
+
+  /hola:
+    get:
+      tags:
+        - Prueba
+      summary: Endpoint de prueba
+      responses:
+        '200':
+          description: Respuesta de prueba
+        '503':
+          description: Servicio no disponible
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Service Unavailable"

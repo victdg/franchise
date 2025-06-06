@@ -7,6 +7,7 @@ export class ProductAdapterMapper {
     product.setBranchId(productDbData.branchId);
     product.setName(productDbData.name);
     product.setStock(productDbData.stock);
+    product.setId(productDbData.id);
     return product;
   }
 }
